@@ -4,6 +4,7 @@ from src.application.generate_response import get_response
 from src.infrastructure.opik_utils import configure
 from opik.integrations.langchain import OpikTracer
 from pydantic import BaseModel
+import asyncio
 
 
 configure()
@@ -60,17 +61,16 @@ if submit and customer_email.strip():
         try:
            
             try:
-                response, state =  get_response(
-                    customer_email=customer_email
-                )
-                data = {"response": response, "agent_state": state}
+                response, state =  asyncio.run(
+                        get_response(customer_email=customer_email)
+                    )
             except Exception as e:
                 opik_tracer = OpikTracer()
                 opik_tracer.flush()
                 raise e
 
-            agent_response = data.get("response", "")
-            agent_state = data.get("agent_state", {})
+            agent_response = response
+            agent_state = state
 
             extracted_intent = agent_state.get("customer_query")
             generated_sql = agent_state.get("sql_query_v2")
